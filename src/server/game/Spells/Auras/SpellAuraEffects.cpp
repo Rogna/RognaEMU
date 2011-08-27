@@ -1519,6 +1519,8 @@ void AuraEffect::PeriodicTick(AuraApplication * aurApp, Unit * caster) const
                             break;
                     }
                 }
+                if (GetSpellProto()->Id == 589 && GetCaster()->GetPlayer) // Shadow word: Pain
+                    damage += GetCaster()->ToPlayer()->GetTotalAttackPowerValue(RANGED_ATTACK) * 0.1833f;
             }
             else
                 damage = uint32(target->CountPctFromMaxHealth(damage));
@@ -3342,8 +3344,8 @@ void AuraEffect::HandleAuraModShapeshift(AuraApplication const *aurApp, uint8 mo
             case FORM_FLIGHT:
             case FORM_MOONKIN:
             {
-                // remove movement affects
-                target->RemoveMovementImpairingAuras();
+                // remove movement affects without root
+                target->RemoveAurasWithMechanic((1 << MECHANIC_SNARE));
 
                 // and polymorphic affects
                 if (target->IsPolymorphed())
@@ -3424,8 +3426,8 @@ void AuraEffect::HandleAuraModShapeshift(AuraApplication const *aurApp, uint8 mo
             if (target->getClass() == CLASS_DRUID)
             {
                 target->setPowerType(POWER_MANA);
-                // Remove movement impairing effects also when shifting out
-                target->RemoveMovementImpairingAuras();
+                // Remove movement impairing effects(without root 4.0.6) also when shifting out
+                target->RemoveAurasWithMechanic((1 << MECHANIC_SNARE));
             }
         }
 
@@ -4192,9 +4194,9 @@ void AuraEffect::HandleAuraWaterWalk(AuraApplication const *aurApp, uint8 mode, 
 
     WorldPacket data;
     if (apply)
-        data.Initialize(SMSG_MOVE_WATER_WALK, 8+4);
+        data.Initialize(SMSG_MOVE_WATER_WALK, 8+4, true);
     else
-        data.Initialize(SMSG_MOVE_LAND_WALK, 8+4);
+        data.Initialize(SMSG_MOVE_LAND_WALK, 8+4, true);
     data.append(target->GetPackGUID());
     data << uint32(0);
     target->SendMessageToSet(&data, true);
@@ -4216,9 +4218,9 @@ void AuraEffect::HandleAuraFeatherFall(AuraApplication const *aurApp, uint8 mode
 
     WorldPacket data;
     if (apply)
-        data.Initialize(SMSG_MOVE_FEATHER_FALL, 8 + 4);
+        data.Initialize(SMSG_MOVE_FEATHER_FALL, 8+4, true);
     else
-        data.Initialize(SMSG_MOVE_NORMAL_FALL, 8 + 4);
+        data.Initialize(SMSG_MOVE_NORMAL_FALL, 8+4, true);
     data.append(target->GetPackGUID());
     data << uint32(0);
     target->SendMessageToSet(&data, true);
@@ -4244,9 +4246,9 @@ void AuraEffect::HandleAuraHover(AuraApplication const *aurApp, uint8 mode, bool
 
     WorldPacket data;
     if (apply)
-        data.Initialize(SMSG_MOVE_SET_HOVER, 8+4);
+        data.Initialize(SMSG_MOVE_SET_HOVER, 8+4, true);
     else
-        data.Initialize(SMSG_MOVE_UNSET_HOVER, 8+4);
+        data.Initialize(SMSG_MOVE_UNSET_HOVER, 8+4, true);
     data.append(target->GetPackGUID());
     data << uint32(0);
     target->SendMessageToSet(&data, true);
@@ -6555,8 +6557,11 @@ void AuraEffect::HandleAuraDummy(AuraApplication const *aurApp, uint8 mode, bool
                 {
                     if (apply)
                         caster->CastSpell(caster, 79808, true, NULL, NULL, GetCasterGUID()); // Arcane Missiles Aurastate
-                    else
-                        caster->RemoveAurasDueToSpell(79808);
+                    break;
+                }
+                case 5143:
+                {
+                    caster->RemoveAurasDueToSpell(79808);
                     break;
                 }
             }
@@ -6591,13 +6596,11 @@ void AuraEffect::HandleAuraDummy(AuraApplication const *aurApp, uint8 mode, bool
 
                     if (apply)
                     {
-                        if (!target->IsInFeralForm())
-                            break;
-
-                        target->CastSpell(target, 50322, true);
+                        if (target->IsInFeralForm())
+                            target->CastSpell(target, 50322, true);
                     }
                     else
-                        target-> RemoveAurasDueToSpell(50322);
+                        target->RemoveAurasDueToSpell(50322);
                     break;
                 }
             }

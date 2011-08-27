@@ -312,11 +312,12 @@ void Unit::Update(uint32 p_time)
 
     // update abilities available only for fraction of time
     UpdateReactives(p_time);
-
-    ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, HealthBelowPct(20));
-    ModifyAuraState(AURA_STATE_HEALTHLESS_35_PERCENT, HealthBelowPct(35));
-    ModifyAuraState(AURA_STATE_HEALTH_ABOVE_75_PERCENT, HealthAbovePct(75));
-
+    if (isAlive())
+    {
+        ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, HealthBelowPct(20));
+        ModifyAuraState(AURA_STATE_HEALTHLESS_35_PERCENT, HealthBelowPct(35));
+        ModifyAuraState(AURA_STATE_HEALTH_ABOVE_75_PERCENT, HealthAbovePct(75));
+    }
     i_motionMaster.UpdateMotion(p_time);
 }
 
@@ -7973,9 +7974,6 @@ bool Unit::HandleAuraProc(Unit * pVictim, uint32 damage, Aura * triggeredByAura,
                     if (this->ToPlayer()->getClass() != CLASS_DEATH_KNIGHT)
                         return false;
                     RuneType rune = this->ToPlayer()->GetLastUsedRune();
-                    // can't proc from death rune use
-                    if (rune == RUNE_DEATH)
-                        return false;
                     AuraEffect * aurEff = triggeredByAura->GetEffect(0);
                     if (!aurEff)
                         return false;
@@ -8139,8 +8137,23 @@ bool Unit::HandleProcTriggerSpell(Unit *pVictim, uint32 damage, AuraEffect* trig
                 }
                 break;
             case SPELLFAMILY_WARRIOR:
-                if (auraSpellInfo->Id == 50421)             // Scent of Blood
-                    trigger_spell_id = 50422;
+                switch (auraSpellInfo->Id)
+                {
+                    case 50421: // Scent of Blood
+                        trigger_spell_id = 50422;
+                        break;
+                    case 80128: // Impending Victory Rank 1
+                    case 80129: // Impending Victory Rank 2
+                        if (!pVictim->HealthBelowPct(20))
+                            return false;
+                    case 93098:
+                        if(damage > 0)
+                        {
+                            int bp = damage * 0.05f; //5% from damage
+                            CastCustomSpell(this, 76691, &bp, &bp, &bp, true, 0, 0, GetGUID());
+                        }
+                        break;
+                }
                 break;
             case SPELLFAMILY_WARLOCK:
             {
@@ -8736,7 +8749,7 @@ bool Unit::HandleProcTriggerSpell(Unit *pVictim, uint32 damage, AuraEffect* trig
             {
                 if (!ToPlayer()->HasSpellCooldown(trigger_spell_id))
                 {
-                    AddAura(trigger_spell_id, this);        
+                    AddAura(trigger_spell_id, this);
                     ToPlayer()->AddSpellCooldown(trigger_spell_id, 0, time(NULL) + 120);
                 }
             }

@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2008-2010 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2010-2011 Project SkyFire <http://www.projectskyfire.org/>
+ * Copyright (C) 2008-2011 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -27,24 +29,24 @@
 enum ShamanSpells
 {
     SHAMAN_SPELL_GLYPH_OF_MANA_TIDE     = 55441,
-    SHAMAN_SPELL_FIRE_NOVA           = 1535,
-    SHAMAN_SPELL_FIRE_NOVA_TRIGGERED = 8349,
+    SHAMAN_SPELL_MANA_TIDE_TOTEM        = 39609,
+    SHAMAN_SPELL_FIRE_NOVA              = 1535,
+    SHAMAN_SPELL_FIRE_NOVA_TRIGGERED    = 8349,
     SHAMAN_SPELL_EARTH_SHOCK            = 8042,
     SHAMAN_SPELL_FULMINATION            = 88766,
     SHAMAN_SPELL_FULMINATION_TRIGGERED  = 88767,
     SHAMAN_SPELL_FULMINATION_INFO       = 95774,
     SHAMAN_SPELL_LIGHTNING_SHIELD_PROC  = 26364,
 
-    SHAMAN_SPELL_UNLEASH_ELEMENTS       = 73680,
-
     //For Earthen Power
     SHAMAN_TOTEM_SPELL_EARTHBIND_TOTEM  = 6474, //Spell casted by totem
-    SHAMAN_TOTEM_SPELL_EARTHEN_POWER    = 59566, //Spell witch remove snare effect
+    SHAMAN_TOTEM_SPELL_EARTHEN_POWER    = 59566,//Spell witch remove snare effect
     SHAMAN_TOTEM_SPELL_EARTHS_GRASP     = 51485,
     SHAMAN_TOTEM_SPELL_EARTHGRAB        = 64695,
 
     SHAMAN_TOTEM_SPELL_TOTEMIC_WRATH    = 77746,
     SHAMAN_TOTEM_SPELL_TOTEMIC_WRATH_AURA = 77747,
+    SHAMAN_SPELL_UNLEASH_ELEMENTS       = 73680,
 };
 
 // 51474 - Astral shift
@@ -58,15 +60,9 @@ public:
         PrepareAuraScript(spell_sha_astral_shift_AuraScript);
 
         uint32 absorbPct;
-
-        bool Load()
-        {
-            absorbPct = SpellMgr::CalculateSpellEffectAmount(GetSpellProto(), EFFECT_0, GetCaster());
-            return true;
-        }
-
         void CalculateAmount(AuraEffect const * /*aurEff*/, int32 & amount, bool & canBeRecalculated)
         {
+            absorbPct = amount;
             // Set absorbtion amount to unlimited
             amount = -1;
         }
@@ -102,10 +98,11 @@ public:
         PrepareSpellScript(spell_sha_fire_nova_SpellScript)
         bool Validate(SpellEntry const * spellEntry)
         {
-            if (!sSpellStore.LookupEntry(SHAMAN_SPELL_FIRE_NOVA))
+            if (sSpellMgr->GetFirstSpellInChain(SHAMAN_SPELL_FIRE_NOVA) != sSpellMgr->GetFirstSpellInChain(spellEntry->Id))
                 return false;
 
-            if (!sSpellStore.LookupEntry(SHAMAN_SPELL_FIRE_NOVA_TRIGGERED))
+            uint8 rank = sSpellMgr->GetSpellRank(spellEntry->Id);
+            if (!sSpellMgr->GetSpellWithRank(SHAMAN_SPELL_FIRE_NOVA_TRIGGERED, rank, true))
                 return false;
             return true;
         }
@@ -174,13 +171,13 @@ public:
             if (Unit *caster = aurEff->GetBase()->GetCaster())
                 if (AuraEffect* aur = caster->GetDummyAuraEffect(SPELLFAMILY_SHAMAN, 20, 1))
                     if (roll_chance_i(aur->GetBaseAmount()))
-                        target->CastSpell(target, SHAMAN_TOTEM_SPELL_EARTHGRAB, true, NULL, aurEff);
+                       target->CastSpell(target, SHAMAN_TOTEM_SPELL_EARTHGRAB, true, NULL, aurEff);
         }
 
         void Register()
         {
-             OnEffectPeriodic += AuraEffectPeriodicFn(spell_sha_earthbind_totem_AuraScript::HandleEffectPeriodic, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
-             OnEffectApply += AuraEffectApplyFn(spell_sha_earthbind_totem_AuraScript::HandleEffectApply, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
+            OnEffectPeriodic += AuraEffectPeriodicFn(spell_sha_earthbind_totem_AuraScript::HandleEffectPeriodic, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+            OnEffectApply += AuraEffectApplyFn(spell_sha_earthbind_totem_AuraScript::HandleEffectApply, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
         }
     };
 
@@ -210,13 +207,13 @@ public:
         void HandleDummy(SpellEffIndex /*effIndex*/)
         {
             Unit* caster = GetCaster();
-            if (!caster)
+            if(!caster)
                 return;
             Player* plr = caster->ToPlayer();
-            if (!plr)
+            if(!plr)
                 return;
 
-            if (!GetTargetUnit())
+            if(!GetTargetUnit())
                 return;
 
             Item *weapons[2];
@@ -224,7 +221,7 @@ public:
             weapons[1] = plr->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
             for(int i = 0; i < 2; i++)
             {
-                if (!weapons[i])
+                if(!weapons[i])
                     continue;
 
                 uint32 unleashSpell = 0;
@@ -251,12 +248,14 @@ public:
                         unleashSpell = 73681; // Unleash Wind
                         break;
                 }
-                if (hostileSpell && !hostileTarget)
+
+                if(hostileSpell && !hostileTarget)
                     return; // don't allow to attack non-hostile targets. TODO: check this before cast
 
-                if (!hostileSpell && hostileTarget)
+                if(!hostileSpell && hostileTarget)
                     target = plr;   // heal ourselves instead of the enemy
-                if (unleashSpell)
+
+                if(unleashSpell)
                 {
                     plr->CastSpell(target, unleashSpell, true);
                 }
@@ -289,15 +288,18 @@ public:
         {
             if (!sSpellStore.LookupEntry(SHAMAN_TOTEM_SPELL_TOTEMIC_WRATH))
                 return false;
+
             if (!sSpellStore.LookupEntry(SHAMAN_TOTEM_SPELL_TOTEMIC_WRATH_AURA))
                 return false;
+
             return true;
         }
 
         void HandleEffectApply(AuraEffect const * aurEff, AuraEffectHandleModes /*mode*/)
         {
             Unit* target = GetTarget();
-            if (target->ToPlayer())
+
+            if(target->ToPlayer())
                 return; // just apply as dummy
 
             // applied by a totem - cast the real aura if owner has the talent
@@ -332,37 +334,46 @@ public:
         {
             if (!sSpellStore.LookupEntry(SHAMAN_SPELL_FULMINATION))
                 return false;
+
             if (!sSpellStore.LookupEntry(SHAMAN_SPELL_FULMINATION_TRIGGERED))
                 return false;
+
             if (!sSpellStore.LookupEntry(SHAMAN_SPELL_FULMINATION_INFO))
                 return false;
+
             return true;
         }
 
         void HandleFulmination(SpellEffIndex effIndex)
         {
             // make caster cast a spell on a unit target of effect
+
             Unit *target = GetHitUnit();
+
             Unit *caster = GetCaster();
-            if (!target || !caster)
+
+            if(!target || !caster)
                 return;
 
             AuraEffect *fulminationAura = caster->GetDummyAuraEffect(SPELLFAMILY_SHAMAN, 2010, 0);
+
             if (!fulminationAura)
                 return;
 
             Aura * lightningShield = caster->GetAura(324);
-            if (!lightningShield)
+
+            if(!lightningShield)
                 return;
+
             uint8 lsCharges = lightningShield->GetCharges();
-            if (lsCharges <= 3)
+
+            if(lsCharges <= 3)
                 return;
             uint8 usedCharges = lsCharges - 3;
 
             SpellEntry const* spellInfo = sSpellStore.LookupEntry(SHAMAN_SPELL_LIGHTNING_SHIELD_PROC);
             int32 basePoints = caster->CalculateSpellDamage(target, spellInfo, 0);
             uint32 damage = usedCharges * caster->SpellDamageBonus(target, spellInfo, effIndex, basePoints, SPELL_DIRECT_DAMAGE);
-
             caster->CastCustomSpell(SHAMAN_SPELL_FULMINATION_TRIGGERED, SPELLVALUE_BASE_POINT0, damage, target, true, NULL, fulminationAura);
             lightningShield->SetCharges(lsCharges - usedCharges);
         }

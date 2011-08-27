@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2008-2010 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2010-2011 Project SkyFire <http://www.projectskyfire.org/>
+ * Copyright (C) 2008-2011 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -196,7 +198,7 @@ public:
                             NewPet->setDeathState(ALIVE);
 
                         NewPet->SetFullHealth();
-                        NewPet->SetPower(NewPet->getPowerType(), NewPet->GetMaxPower(NewPet->getPowerType()));
+                        NewPet->SetPower(NewPet->getPowerType(),NewPet->GetMaxPower(NewPet->getPowerType()));
 
                         switch (NewPet->GetEntry())
                         {
@@ -616,7 +618,7 @@ public:
             if (Battleground *bg = caster->ToPlayer()->GetBattleground())
             {
                 if (bg->GetTypeID(true) == BATTLEGROUND_IC)
-                    bg->DoAction(1, caster->GetGUID());
+                    bg->DoAction(1,caster->GetGUID());
             }
         }
 
@@ -654,7 +656,7 @@ class spell_gen_parachute_ic : public SpellScriptLoader
                     return;
 
                 if (target->ToPlayer()->m_movementInfo.fallTime > 2000)
-                    target->CastSpell(target, SPELL_PARACHUTE_IC, true);
+                    target->CastSpell(target,SPELL_PARACHUTE_IC,true);
             }
 
             void Register()

@@ -523,21 +523,50 @@ void Spell::SpellDamageSchoolDmg(SpellEffIndex effIndex)
                // Intercept
                else if (m_spellInfo->Id == 20253)
                    damage = uint32(1 + m_caster->GetTotalAttackPowerValue(BASE_ATTACK) * 0.12);
-               // Execute
-               else if (m_spellInfo->Id ==5308)
-                   damage = uint32 (10 + m_caster->GetTotalAttackPowerValue(BASE_ATTACK)* 0.437*100/100);
-               // Heroic Strike
-               else if (m_spellInfo->Id == 78)
-                   damage = uint32(8 + m_caster->GetTotalAttackPowerValue(BASE_ATTACK)* 60 / 100);
-               // Shockwave
-               else if (m_spellInfo->Id == 46968)
-               {
-                   int32 pct = m_caster->CalculateSpellDamage(unitTarget, m_spellInfo, 2);
-                   if (pct > 0)
-                       damage+= int32(m_caster->GetTotalAttackPowerValue(BASE_ATTACK) * pct / 100);
-                   break;
-               }
-               break;
+                else if (m_spellInfo->Id ==5308) // Execute
+                {
+                    float ap = m_caster->GetTotalAttackPowerValue(BASE_ATTACK);
+                    damage = uint32 (10 + ap * 0.437 * 100 / 100);
+                    uint32 power = m_caster->GetPower(POWER_RAGE);
+                    if(power > 0)
+                    {
+                        uint32 mod = power > 20 ? 20 : power;
+                        uint32 bonus_rage = 0;
+
+                        if(m_caster->HasAura(29723))
+                            bonus_rage = 5;
+                        if(m_caster->HasAura(29725))
+                            bonus_rage = 10;
+
+                        damage += uint32 ((ap * 0.874 * 100 / 100 - 1) * mod / 100.0f);
+                        m_caster->SetPower(POWER_RAGE, (power - mod) + bonus_rage);
+                    }
+                }
+                else if (m_spellInfo->Id == 78) // Heroic Strike
+                    damage = uint32(8 + (m_caster->GetTotalAttackPowerValue(BASE_ATTACK) * 60) / 100);
+                else if (m_spellInfo->Id == 20253)
+                    damage = uint32(1 + m_caster->GetTotalAttackPowerValue(BASE_ATTACK) * 0.12);
+                else if (m_spellInfo->Id == 46968) // Shockwave
+                {
+                    int32 pct = m_caster->CalculateSpellDamage(unitTarget, m_spellInfo, 2);
+                    if (pct > 0)
+                        damage += int32(CalculatePctN(m_caster->GetTotalAttackPowerValue(BASE_ATTACK), pct));
+                    break;
+                }
+                else if (m_spellInfo->Id == 6343)
+                {
+                    uint32 trig_spell;
+                    if (m_caster->HasAura(80979))
+                        trig_spell = 87095;
+                    else if (m_caster->HasAura(80980))
+                        trig_spell = 87096;
+                    else
+                        break;
+
+                    if(urand(0,1))
+                        m_caster->CastSpell(m_caster, trig_spell, true);
+                }
+                break;
             }
             case SPELLFAMILY_WARLOCK:
             {
@@ -2843,6 +2872,9 @@ void Spell::EffectHealPct(SpellEffIndex effIndex)
     if (m_spellInfo->Id == 59754 && unitTarget == m_caster)
         return;
 
+    if (m_spellInfo->Id == 34428 && m_originalCaster->HasAura(82368))
+        damage = 5;
+
     m_healing += m_originalCaster->SpellHealingBonus(unitTarget, m_spellInfo, effIndex, unitTarget->CountPctFromMaxHealth(damage), HEAL);
 }
 
@@ -4458,6 +4490,32 @@ void Spell::EffectTaunt(SpellEffIndex /*effIndex*/)
 
 void Spell::EffectWeaponDmg(SpellEffIndex /*effIndex*/)
 {
+    switch (m_spellInfo->Id)
+    {
+        case 35395:     // Crusader Strike
+        {
+            m_caster->CastSpell(m_caster, 85705, true);
+            break;
+        }
+        case 8676:
+        {
+            if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                if (Item* item = m_caster->ToPlayer()->GetWeaponForAttack(m_attackType, true))
+                    if (item->GetProto()->SubClass == ITEM_SUBCLASS_WEAPON_DAGGER)
+                        damage += m_spellInfo->EffectBasePoints[1];
+        }
+        case 20243:
+        {
+            if(Aura* aura = unitTarget->GetAura(7386))
+            {
+                uint8 stackAmount = aura->GetStackAmount();
+                if(stackAmount == 0)
+                    stackAmount = 1;
+
+                damage *= stackAmount;
+            }
+        }
+    }
 }
 
 void Spell::SpellDamageWeaponDmg(SpellEffIndex effIndex)
@@ -5035,6 +5093,14 @@ void Spell::EffectScriptEffect(SpellEffIndex effIndex)
                     }
                     return;
                 }
+                case 35376:
+                    if (unitTarget)
+                        unitTarget->ToPlayer()->TeleportTo(0, 1805.99f, 341.32f, 70.66f, 1.6f);
+                    break;
+                case 35727:
+                    if (unitTarget)
+                        unitTarget->ToPlayer()->TeleportTo(530, 10038.7f, -7000.9f, 61.86f, 3.05f);
+                    break;
                 case 45204: // Clone Me!
                 case 41055: // Copy Weapon
                 case 45206: // Copy Off-hand Weapon
