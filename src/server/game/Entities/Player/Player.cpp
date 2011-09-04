@@ -6000,76 +6000,38 @@ bool Player::UpdateFishingSkill()
 
     uint32 SkillValue = GetPureSkillValue(SKILL_FISHING);
 
-    int32 chance; 
-	
-	if (SkillValue <= 115)
-	{
-		chance = 100;
-	}
-
-	else if (SkillValue > 115 && SkillValue <= 150)
-	{
-		chance = 50;
-	}
-
-	else if (SkillValue > 150 && SkillValue <= 170)
-	{
-		chance = 33,33;
-	}
-
-	else if (SkillValue > 170 && SkillValue <= 190)
-	{
-		chance = 25;
-	}
-
-	else if (SkillValue > 190 && SkillValue <= 215)
-	{
-		chance = 20;
-	}
-
-	else if (SkillValue > 215 && SkillValue <= 235)
-	{
-		chance = 16,67;
-	}
-
-	else if (SkillValue > 235 && SkillValue <= 260)
-	{
-		chance = 14,29;
-	}
-	
-	else if (SkillValue > 260 && SkillValue <= 280)
-	{
-		chance = 12,5;
-	}
-	
-	else if (SkillValue > 280 && SkillValue <= 325)
-	{
-		chance = 11,11;
-	}
-	
-	else if (SkillValue > 325 && SkillValue <= 365)
-	{
-		chance = 10;
-	}
-	
-	else if (SkillValue > 365 && SkillValue <= 450)
-	{
-		chance = 9,1;
-	}
-	
-	else if (SkillValue > 450 && SkillValue <= 500)
-	{
-		chance = 11,11;
-	}
-	
-	else if (SkillValue > 500)
-	{
-		chance = 10;
-	}
+    float chance = 0.0f; 
+    
+    if (SkillValue <= 115)
+        chance = 100.0f;
+    else if (SkillValue <= 150)
+        chance = 50.0f;
+    else if (SkillValue <= 170)
+        chance = 33.33f;
+    else if (SkillValue <= 190)
+        chance = 25.0f;
+    else if (SkillValue <= 215)
+        chance = 20.0f;
+    else if (SkillValue <= 235)
+        chance = 16.67f;
+    else if (SkillValue <= 260)
+        chance = 14.29f;
+    else if (SkillValue <= 280)
+        chance = 12.5f;
+    else if (SkillValue <= 325)
+        chance = 11.11f;
+    else if (SkillValue <= 365)
+        chance = 10.0f;
+    else if (SkillValue <= 450)
+        chance = 9.1f;
+    else if (SkillValue <= 500)
+        chance = 11.11f;
+    else
+        chance = 10.0f;
 
     uint32 gathering_skill_gain = sWorld->getIntConfig(CONFIG_SKILL_GAIN_GATHERING);
 
-    return UpdateSkillPro(SKILL_FISHING, chance*10, gathering_skill_gain);
+    return UpdateSkillPro(SKILL_FISHING, (int32)(chance * 10.0f), gathering_skill_gain);
 }
 
 // levels sync. with spell requirement for skill levels to learn
@@ -14290,6 +14252,14 @@ void Player::OnGossipSelect(WorldObject* pSource, uint32 gossipListId, uint32 me
 
     GossipMenuItemData pMenuData = gossipmenu.GetItemData(gossipListId);
 
+	uint32 cost = gossipmenu.GetItem(gossipListId).m_gBoxMoney;
+    if (!HasEnoughMoney(cost))
+    {
+        SendBuyError(BUY_ERR_NOT_ENOUGHT_MONEY, 0, 0, 0);
+        PlayerTalkClass->CloseGossip();
+        return;
+    }
+
     switch(gossipOptionId)
     {
         case GOSSIP_OPTION_GOSSIP:
@@ -14336,24 +14306,13 @@ void Player::OnGossipSelect(WorldObject* pSource, uint32 gossipListId, uint32 me
         case GOSSIP_OPTION_LEARNDUALSPEC:
             if (GetSpecsCount() == 1 && getLevel() >= sWorld->getIntConfig(CONFIG_MIN_DUALSPEC_LEVEL))
             {
-                if (!HasEnoughMoney(100000))
-                {
-                    SendBuyError(BUY_ERR_NOT_ENOUGHT_MONEY, 0, 0, 0);
-                    PlayerTalkClass->CloseGossip();
-                    break;
-                }
-                else
-                {
-                    ModifyMoney(-100000);
+                // Cast spells that teach dual spec
+                // Both are also ImplicitTarget self and must be cast by player
+                CastSpell(this, 63680, true, NULL, NULL, GetGUID());
+                CastSpell(this, 63624, true, NULL, NULL, GetGUID());
 
-                    // Cast spells that teach dual spec
-                    // Both are also ImplicitTarget self and must be cast by player
-                    CastSpell(this, 63680, true, NULL, NULL, GetGUID());
-                    CastSpell(this, 63624, true, NULL, NULL, GetGUID());
-
-                    // Should show another Gossip text with "Congratulations..."
-                    PlayerTalkClass->CloseGossip();
-                }
+                // Should show another Gossip text with "Congratulations..."
+                PlayerTalkClass->CloseGossip();
             }
             break;
         case GOSSIP_OPTION_UNLEARNTALENTS:
@@ -14401,6 +14360,8 @@ void Player::OnGossipSelect(WorldObject* pSource, uint32 gossipListId, uint32 me
             break;
         }
     }
+
+	ModifyMoney(-cost);
 }
 
 uint32 Player::GetGossipTextId(WorldObject *pSource)
