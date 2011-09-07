@@ -1519,8 +1519,6 @@ void AuraEffect::PeriodicTick(AuraApplication * aurApp, Unit * caster) const
                             break;
                     }
                 }
-                if (GetSpellProto()->Id == 589 && GetCaster()->GetPlayer) // Shadow word: Pain
-                    damage += GetCaster()->ToPlayer()->GetTotalAttackPowerValue(RANGED_ATTACK) * 0.1833f;
             }
             else
                 damage = uint32(target->CountPctFromMaxHealth(damage));
@@ -1755,10 +1753,9 @@ void AuraEffect::PeriodicTick(AuraApplication * aurApp, Unit * caster) const
             else
             {
                 // Wild Growth = amount + (6 - 2*doneTicks) * ticks* amount / 100
+                int32 addition = 0;
                 if (m_spellProto->SpellFamilyName == SPELLFAMILY_DRUID && m_spellProto->SpellIconID == 2864)
-                    damage += int32(float(damage * GetTotalTicks()) * ((6 - float(2 * (GetTickNumber() - 1))) / 100));
-
-                int32 addition = int32(float(damage * GetTotalTicks()) * ((6-float(2*(GetTickNumber()-1)))/100));
+                    addition = int32(float(damage * GetTotalTicks()) * ((6-float(2*(GetTickNumber()-1)))/100));
 
                 // Item - Druid T10 Restoration 2P Bonus
                 if (AuraEffect * aurEff = caster->GetAuraEffect(70658, 0))
@@ -6433,12 +6430,13 @@ void AuraEffect::HandleAuraDummy(AuraApplication const *aurApp, uint8 mode, bool
                 }
                 case 57723: // Exhaustion
                 case 57724: // Sated
+                case 80354: // Temporal Displacement
+                case 95809: // Insanity
                 {
-                    switch(GetId())
-                    {
-                        case 57723: target->ApplySpellImmune(GetId(), IMMUNITY_ID, 32182, apply); break; // Heroism
-                        case 57724: target->ApplySpellImmune(GetId(), IMMUNITY_ID, 2825, apply);  break; // Bloodlust
-                    }
+                    target->ApplySpellImmune(GetId(), IMMUNITY_ID, 32182, apply);  // Heroism
+                    target->ApplySpellImmune(GetId(), IMMUNITY_ID, 2825, apply);   // Bloodlust
+                    target->ApplySpellImmune(GetId(), IMMUNITY_ID, 80353, apply);  // Time Warp
+                    target->ApplySpellImmune(GetId(), IMMUNITY_ID, 90355, apply);  // Ancient Hysteria
                     break;
                 }
                 case 57819: // Argent Champion
