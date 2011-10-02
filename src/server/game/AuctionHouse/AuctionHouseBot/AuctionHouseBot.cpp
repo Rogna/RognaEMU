@@ -21,6 +21,7 @@
  */
 
 #include "gamePCH.h"
+#include "DB2Stores.h"
 #include "DBCStores.h"
 #include "ObjectMgr.h"
 #include "AuctionHouseMgr.h"
@@ -394,8 +395,9 @@ void AuctionHouseBot::addNewAuctions(Player *AHBplayer, AHBConfig *config)
                 continue;
             }
 
-            ItemTemplate const* prototype = sObjectMgr->GetItemTemplate(itemID);
-            if (prototype == NULL)
+			ItemPrototype const* prototype = sObjectMgr->GetItemPrototype(itemID);
+
+			if (prototype == NULL)
             {
                 if (debug_Out) sLog->outError("AHSeller: Huh?!?! prototype == NULL");
                 continue;
@@ -609,7 +611,7 @@ void AuctionHouseBot::addNewAuctionBuyerBotBid(Player *AHBplayer, AHBConfig *con
         }
 
         // get item prototype
-        ItemTemplate const* prototype = sObjectMgr->GetItemTemplate(auction->item_template);
+		ItemPrototype const* prototype = sObjectMgr->GetItemPrototype(auction->item_template);
 
         // check which price we have to use, startbid or if it is bidded already
         uint32 currentprice;
@@ -709,7 +711,7 @@ void AuctionHouseBot::addNewAuctionBuyerBotBid(Player *AHBplayer, AHBConfig *con
             sLog->outString("AHBuyer: Bonding: %u", prototype->Bonding);
             sLog->outString("AHBuyer: Quality: %u", prototype->Quality);
             sLog->outString("AHBuyer: Item Level: %u", prototype->ItemLevel);
-            sLog->outString("AHBuyer: Ammo Type: %u", prototype->AmmoType);
+            //sLog->outString("AHBuyer: Ammo Type: %u", prototype->AmmoType);     in Cataclysm ammo is deprecated ;) 
             sLog->outString("-------------------------------------------------");
         }
 
@@ -769,41 +771,43 @@ void AuctionHouseBot::Update()
         return;
 
     WorldSession _session(AHBplayerAccount, NULL, SEC_PLAYER, true, 0, LOCALE_enUS, 0);
-    Player _AHBplayer(&_session);
-    _AHBplayer.Initialize(AHBplayerGUID);
-    sObjectAccessor->AddObject(&_AHBplayer);
+	//Player *owner = sObjectMgr->GetPlayer(owner_guid);
+    Player *_AHBplayer = _session.GetPlayer() ;
+
+    _AHBplayer->Initialize(AHBplayerGUID);
+    sObjectAccessor->AddObject(_AHBplayer);
 
     // Add New Bids
     if (!sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_AUCTION))
     {
-        addNewAuctions(&_AHBplayer, &AllianceConfig);
+        addNewAuctions(_AHBplayer, &AllianceConfig);
         if (((_newrun - _lastrun_a) >= (AllianceConfig.GetBiddingInterval() * MINUTE)) && (AllianceConfig.GetBidsPerInterval() > 0))
         {
             //if (debug_Out) sLog->outString("AHBuyer: %u seconds have passed since last bid", (_newrun - _lastrun_a));
             //if (debug_Out) sLog->outString("AHBuyer: Bidding on Alliance Auctions");
-            addNewAuctionBuyerBotBid(&_AHBplayer, &AllianceConfig, &_session);
+            addNewAuctionBuyerBotBid(_AHBplayer, &AllianceConfig, &_session);
             _lastrun_a = _newrun;
         }
 
-        addNewAuctions(&_AHBplayer, &HordeConfig);
+        addNewAuctions(_AHBplayer, &HordeConfig);
         if (((_newrun - _lastrun_h) >= (HordeConfig.GetBiddingInterval() * MINUTE)) && (HordeConfig.GetBidsPerInterval() > 0))
         {
             //if (debug_Out) sLog->outString("AHBuyer: %u seconds have passed since last bid", (_newrun - _lastrun_h));
             //if (debug_Out) sLog->outString("AHBuyer: Bidding on Horde Auctions");
-            addNewAuctionBuyerBotBid(&_AHBplayer, &HordeConfig, &_session);
+            addNewAuctionBuyerBotBid(_AHBplayer, &HordeConfig, &_session);
             _lastrun_h = _newrun;
         }
     }
 
-    addNewAuctions(&_AHBplayer, &NeutralConfig);
+    addNewAuctions(_AHBplayer, &NeutralConfig);
     if (((_newrun - _lastrun_n) >= (NeutralConfig.GetBiddingInterval() * MINUTE)) && (NeutralConfig.GetBidsPerInterval() > 0))
     {
         //if (debug_Out) sLog->outString("AHBuyer: %u seconds have passed since last bid", (_newrun - _lastrun_n));
         //if (debug_Out) sLog->outString("AHBuyer: Bidding on Neutral Auctions");
-        addNewAuctionBuyerBotBid(&_AHBplayer, &NeutralConfig, &_session);
+        addNewAuctionBuyerBotBid(_AHBplayer, &NeutralConfig, &_session);
         _lastrun_n = _newrun;
     }
-    sObjectAccessor->RemoveObject(&_AHBplayer);
+    sObjectAccessor->RemoveObject(_AHBplayer);
 }
 
 void AuctionHouseBot::Initialize()
@@ -983,7 +987,7 @@ void AuctionHouseBot::Initialize()
 
         for (uint32 itemID = 0; itemID < sItemStore.GetNumRows(); itemID++)
         {
-            ItemTemplate const* prototype = sObjectMgr->GetItemTemplate(itemID);
+			ItemPrototype const* prototype = sObjectMgr->GetItemPrototype(itemID);
 
             if (prototype == NULL)
                 continue;
@@ -1489,7 +1493,7 @@ void AuctionHouseBot::IncrementItemCounts(AuctionEntry* ah)
     }
 
     // get item prototype
-    ItemTemplate const* prototype = sObjectMgr->GetItemTemplate(ah->item_template);
+	ItemPrototype const* prototype = sObjectMgr->GetItemPrototype(ah->item_template);
 
     AHBConfig *config;
 
@@ -1521,7 +1525,8 @@ void AuctionHouseBot::IncrementItemCounts(AuctionEntry* ah)
 void AuctionHouseBot::DecrementItemCounts(AuctionEntry* ah, uint32 item_template)
 {
     // get item prototype
-    ItemTemplate const* prototype = sObjectMgr->GetItemTemplate(item_template);
+	ItemPrototype const* prototype = sObjectMgr->GetItemPrototype(item_template);
+	
 
     AHBConfig *config;
 
@@ -1884,7 +1889,8 @@ void AuctionHouseBot::LoadValues(AHBConfig *config)
                 Item *item =  sAuctionMgr->GetAItem(Aentry->item_guidlow);
                 if (item)
                 {
-                    ItemTemplate const *prototype = item->GetTemplate();
+                    //ItemTemplate const *prototype = item->GetTemplate();
+					ItemPrototype const *prototype = item->GetProto();
                     if (prototype)
                     {
                         switch (prototype->Quality)
