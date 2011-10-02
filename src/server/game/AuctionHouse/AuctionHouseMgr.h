@@ -31,8 +31,6 @@
 
 #include "AuctionHouseBot/AuctionHouseBot.h"
 
-#include "AuctionHouseBot/AuctionHouseBot.h"
-
 class Item;
 class Player;
 class WorldPacket;

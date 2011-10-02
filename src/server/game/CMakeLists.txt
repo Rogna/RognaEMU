@@ -114,7 +114,6 @@ set(game_STAT_SRCS
   ${sources_AI}
   ${sources_AuctionHouse}
   ${sources_AuctionHouseBot}
-  ${sources_AuctionHouseBot}
   ${sources_Battlegrounds}
   ${sources_Calendar}
   ${sources_Chat}
@@ -181,7 +180,6 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/AI/ScriptedAI
   ${CMAKE_CURRENT_SOURCE_DIR}/AI/SmartScripts
   ${CMAKE_CURRENT_SOURCE_DIR}/AuctionHouse
-  ${CMAKE_CURRENT_SOURCE_DIR}/AuctionHouse/AuctionHouseBot
   ${CMAKE_CURRENT_SOURCE_DIR}/AuctionHouse/AuctionHouseBot
   ${CMAKE_CURRENT_SOURCE_DIR}/Battlegrounds
   ${CMAKE_CURRENT_SOURCE_DIR}/Battlegrounds/Zones
