@@ -357,6 +357,39 @@ void WorldSession::HandleWhoOpcode(WorldPacket & recv_data)
         ++displaycount;
     }
 
+    if (matchcount < sWorld->getIntConfig(CONFIG_MAX_WHO))
+    {
+															//RACE HUMAN = 1,DWARF = 3,NIGHTELF = 4,GNOME = 7,DRAENEI = 11   469 ALLIANCE
+															//RACE ORC = 2,UNDEAD = 5,TAUREN = 6,TROLL = 8,BLOODELF = 10      67 HORDE
+		QueryResult result = QueryResult(NULL);
+		if (team==469)
+			result = CharacterDatabase.PQuery("SELECT C.`name`,(SELECT G.name FROM `guild` G,`guild_member` GM WHERE G.`guildid` = GM.`guildid` AND GM.`guid` = C.`guid`) guildname, C.`level`, C.`class`, C.`race`, C.`gender`, C.`zone` FROM `characters` C WHERE C.`online` >= '2' AND C.`race` IN ('1','3','4','7','11')");
+		else if (team==67)
+			result = CharacterDatabase.PQuery("SELECT C.`name`,(SELECT G.name FROM `guild` G,`guild_member` GM WHERE G.`guildid` = GM.`guildid` AND GM.`guid` = C.`guid`) guildname, C.`level`, C.`class`, C.`race`, C.`gender`, C.`zone` FROM `characters` C WHERE C.`online` >= '2' AND C.`race` IN ('2','5','6','8','10')");
+		else 
+			result = CharacterDatabase.PQuery("SELECT C.`name`,(SELECT G.name FROM `guild` G,`guild_member` GM WHERE G.`guildid` = GM.`guildid` AND GM.`guid` = C.`guid`) guildname, C.`level`, C.`class`, C.`race`, C.`gender`, C.`zone` FROM `characters` C WHERE C.`online` >= '2'");
+
+        if (result)
+        do
+        {
+	        if ((matchcount++) >= sWorld->getIntConfig(CONFIG_MAX_WHO))
+    	        continue;
+
+            Field *fields = result->Fetch();
+
+            data << fields[0].GetString();             // player name
+            data << fields[1].GetString();             // guild name
+            data << fields[2].GetUInt32();                // player level
+            data << fields[3].GetUInt32();                // player class
+            data << fields[4].GetUInt32();                // player race
+            data << fields[5].GetUInt8();                // player gender
+            data << fields[6].GetUInt32();                // player zone id
+
+						++displaycount;
+						
+        } while(result->NextRow());
+    }
+
     data.put(0, displaycount);                            // insert right count, count displayed
     data.put(4, matchcount);                              // insert right count, count of matches
 

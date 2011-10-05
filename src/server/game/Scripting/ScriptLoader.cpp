@@ -596,6 +596,8 @@ void AddSC_instance_the_vortex_pinnacle();      //The Vortex Pinnacle
 void AddSC_instance_grim_batol();               //Grim Batol
 void AddSC_instance_throne_of_the_tides();      //Throne of the Tides
 void AddSC_instance_blackrock_caverns();        //Blackrock Caverns
+void AddSC_instance_blackwing_descent();		//Blackwing Descent
+void AddSC_boss_magmaw();
 
 // battlegrounds
 
@@ -1232,6 +1234,8 @@ void AddNorthrendScripts()
     AddSC_instance_grim_batol();               //Grim Batol
     AddSC_instance_throne_of_the_tides();      //Throne of the Tides
     AddSC_instance_blackrock_caverns();        //Blackrock Caverns
+	AddSC_instance_blackwing_descent();			//Blackwing Descent
+	AddSC_boss_magmaw();
 
 #endif
 }

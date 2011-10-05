@@ -383,12 +383,16 @@ bool AuthSocket::_HandleLogonChallenge()
 
                 if (strcmp(fields[3].GetCString(), ip_address.c_str()))
                 {
-                    sLog->outStaticDebug("[AuthChallenge] Account IP differs");
-                    pkt << (uint8) WOW_FAIL_SUSPENDED;
-                    locked = true;
-                }
-                else
-                    sLog->outStaticDebug("[AuthChallenge] Account IP matches");
+					sLog->outStaticDebug("[AuthChallenge] Account IP differs");
+					pkt << (uint8) WOW_FAIL_LOCKED_ENFORCED;
+					locked=true;
+                 }
+                 else
+                 {
+					sLog->outStaticDebug("[AuthChallenge] Account IP matches");
+					pkt << (uint8) WOW_FAIL_LOCKED_ENFORCED;
+					locked=true;
+                 }
             }
             else
                 sLog->outStaticDebug("[AuthChallenge] Account '%s' is not locked to ip", _login.c_str());
