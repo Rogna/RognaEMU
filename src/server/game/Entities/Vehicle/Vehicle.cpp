@@ -147,7 +147,7 @@ void Vehicle::Uninstall()
             if (passenger->HasUnitTypeMask(UNIT_MASK_ACCESSORY))
                 passenger->ToTempSummon()->UnSummon();
 
-    this->RemoveAllPassengers();
+    RemoveAllPassengers();
 
     if (GetBase()->GetTypeId() == TYPEID_UNIT)
         sScriptMgr->OnUninstall(this);
@@ -161,7 +161,7 @@ void Vehicle::Die()
             if (passenger->HasUnitTypeMask(UNIT_MASK_ACCESSORY))
                 passenger->setDeathState(JUST_DIED);
 
-    this->RemoveAllPassengers();
+    RemoveAllPassengers();
 
     if (GetBase()->GetTypeId() == TYPEID_UNIT)
         sScriptMgr->OnDie(this);
