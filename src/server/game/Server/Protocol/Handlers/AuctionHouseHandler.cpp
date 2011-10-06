@@ -238,8 +238,7 @@ void WorldSession::HandleAuctionSellItem(WorldPacket & recv_data)
 
     AuctionEntry *AH = new AuctionEntry;
     AH->Id = sObjectMgr->GenerateAuctionID();
-    sLog->outString("Is it true or false [%u]", sAuctionBotConfig.getConfig(CONFIG_BOOL_AHBOT_OVERRIDE_SIDE));
-    if (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_AUCTION) && sAuctionBotConfig.getConfig(CONFIG_BOOL_AHBOT_OVERRIDE_SIDE) == false)
+    if (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_AUCTION))
         AH->auctioneer = 23442;
     else
         AH->auctioneer = GUID_LOPART(auctioneer);
