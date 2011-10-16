@@ -209,8 +209,9 @@ set(scripts_STAT_SRCS
   EasternKingdoms/GrimBatol/instance_grim_batol.cpp
   EasternKingdoms/ThroneOfTheTides/throne_of_the_tides.h
   EasternKingdoms/ThroneOfTheTides/instance_throne_of_the_tides.cpp
-  EasternKingdoms/BlackwingDescent/blackwing_descent.h
+  EasternKingdoms/BlackwingDescent/blackwing_descent.cpp
   EasternKingdoms/BlackwingDescent/instance_blackwing_descent.cpp
+  EasternKingdoms/BlackwingDescent/blackwing_descent.h
   EasternKingdoms/BlackwingDescent/boss_magmaw.cpp
 )
 
